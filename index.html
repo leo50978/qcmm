@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f6f7f4">
+    <meta name="theme-color" content="#f6f1e7">
     <meta name="description" content="Entretien de préparation pour le futur logiciel de gestion de votre activité de pet-sitting.">
     <title>Entretien de préparation · Votre futur logiciel</title>
     <link rel="icon" href="assets/icons/paw.svg" type="image/svg+xml">
@@ -15,11 +15,12 @@
     <header class="site-header">
       <a class="brand" href="#" aria-label="Accueil">
         <span class="brand-mark" aria-hidden="true"><img src="assets/icons/paw.svg" alt=""></span>
-        <span><strong>Votre futur logiciel</strong><small>Entretien de préparation</small></span>
+        <span><strong>Votre quotidien, en mieux</strong><small>Parcours de préparation</small></span>
       </a>
       <div class="header-actions">
-        <span id="save-status" class="save-status" aria-live="polite">Vos réponses restent privées</span>
-        <button id="admin-open" class="text-button" type="button" hidden>Administration</button>
+        <span id="save-status" class="save-status" aria-live="polite">Connexion sécurisée…</span>
+        <button id="retry-save" class="retry-button" type="button" hidden>Réessayer</button>
+        <button id="admin-open" class="text-button" type="button">Responsable</button>
       </div>
     </header>
 
@@ -28,7 +29,7 @@
     </main>
 
     <footer class="site-footer">
-      <span>Un entretien de cadrage pour une activité de pet-sitting à Paris</span>
+      <span>Un parcours pour imaginer votre futur outil</span>
       <button id="privacy-open" class="text-button" type="button">Confidentialité</button>
     </footer>
 
@@ -38,12 +39,12 @@
     </dialog>
     <dialog id="privacy-dialog" class="dialog-card" aria-labelledby="privacy-title">
       <form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="Fermer">×</button></form>
-      <h2 id="privacy-title">Confidentialité des réponses</h2>
-      <p>Les réponses servent uniquement à préparer le cadrage du futur logiciel de gestion. Ne saisissez aucune donnée réelle sur un client, un animal, un code d’accès ou une situation médicale.</p>
-      <p>Les réponses sont accessibles à la personne qui les a déposées et aux administrateurs autorisés du projet. Durée de conservation : <strong id="retention-label">À définir avec la commanditaire</strong>. Responsable du traitement et contact : <strong id="privacy-contact-label">À renseigner par la commanditaire</strong>.</p>
-      <p>Vous pouvez demander la rectification ou la suppression de vos réponses en écrivant à ce contact. Ces informations doivent être complétées avant le partage final.</p>
-      <p>En mode démo, seuls des compteurs agrégés de parcours (durée, écrans vus, réponses terminées ou interrompues) sont conservés dans le navigateur pour évaluer le questionnaire. Ils ne sont pas transmis.</p>
-      <button class="button button-primary" type="button" data-close-dialog>J’ai compris</button>
+      <h2 id="privacy-title">Vos réponses, en privé</h2>
+      <p>Les réponses servent à préparer le futur logiciel. N’indiquez aucune donnée réelle sur un client, un animal, un code d’accès ou une situation médicale.</p>
+      <p>Votre réponse est accessible à vous et aux administrateurs autorisés. Conservation : <strong id="retention-label">À définir avec la responsable</strong>. Contact : <strong id="privacy-contact-label">À renseigner</strong>.</p>
+      <p>Pour corriger ou supprimer une réponse, écrivez à ce contact. Ces informations doivent être complétées avant le partage.</p>
+      <p>Firebase crée une session anonyme sur cet appareil pour sauvegarder votre brouillon. Aucun compte ni mot de passe n’est demandé.</p>
+      <button class="button button-primary" type="button" data-close-dialog>Compris</button>
     </dialog>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>

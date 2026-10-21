@@ -9,7 +9,7 @@ export const firebaseConfig = {
   measurementId: "G-SPBSZ1CBC3"
 };
 
-// Set false for a local-only demonstration when Firebase has not been configured.
+// If Firebase is unavailable, the questionnaire stays open but cannot be saved or sent.
 export const firebaseEnabled = true;
 export const questionnaireVersion = "3.0.0";
 export const businessName = ""; // Empty uses the neutral title above.

@@ -14,7 +14,7 @@ test("Firestore protège la propriété, la liste admin et les envois finalisés
   });
   try{
     await env.clearFirestore();
-    const a=env.authenticatedContext("respondent-a").firestore();
+    const a=env.authenticatedContext("respondent-a",{firebase:{sign_in_provider:"anonymous"}}).firestore();
     const b=env.authenticatedContext("respondent-b").firestore();
     const anonymous=env.unauthenticatedContext().firestore();
     const admin=env.authenticatedContext("admin-user",{admin:true}).firestore();
@@ -25,6 +25,7 @@ test("Firestore protège la propriété, la liste admin et les envois finalisés
     await assertFails(getDocs(collection(anonymous,"submissions")));
     await assertFails(getDocs(collection(b,"submissions")));
     await assertSucceeds(getDocs(collection(admin,"submissions")));
+    await assertFails(setDoc(doc(b,"submissions/respondent-b"),payload("respondent-b")));
     await assertFails(updateDoc(doc(b,"submissions/respondent-a"),{status:"submitted",submittedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
     await assertSucceeds(updateDoc(doc(a,"submissions/respondent-a"),{status:"submitted",submittedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
     await assertFails(updateDoc(doc(a,"submissions/respondent-a"),{answers:{changed:{value:"no"}},updatedAt:serverTimestamp()}));

@@ -1,27 +1,26 @@
-# Schéma de données et accès
+# Schéma des réponses
 
 ## Collection `submissions`
 
-Document ID = UID Firebase Authentication du répondant (un document par répondant).
+Chaque document porte l’UID de session anonyme Firebase de la répondante; son navigateur conserve cette session pour la reprise.
 
 | Champ | Type | Usage |
 |---|---|---|
-| `questionnaireVersion` | chaîne | Interprétation stable des réponses |
-| `status` | `draft`, `incomplete`, `submitted` | Brouillon modifiable; états incomplet/soumis terminaux |
-| `respondentId` | chaîne UID | Doit correspondre au document et à l’utilisateur authentifié |
-| `answers` | map d’identifiants vers `{ value, otherText?, inlineText?, answeredAt? }` ou `{ status: 'skipped' }` | Réponses explicites seulement; faits recalculés dans le rapport |
+| `questionnaireVersion` | chaîne | Version d’interprétation des réponses |
+| `status` | `draft`, `incomplete`, `submitted` | Brouillon modifiable; envoi final verrouillé |
+| `respondentId` | UID anonyme | Correspond à l’UID du document |
+| `answers` | map de réponses | Choix explicites seulement; faits recalculés dans le rapport |
 | `createdAt`, `updatedAt`, `submittedAt` | timestamp serveur | Métadonnées minimales |
 
-Les réponses masquées après changement de branche sont retirées avant sauvegarde/envoi. La copie locale de reprise expire au bout de sept jours; elle est effacée après un envoi Firebase réussi ou une déconnexion dont la sauvegarde distante a réussi. Si la déconnexion survient hors ligne, la copie reste disponible jusqu’à son expiration pour éviter de perdre le brouillon. Les faits n’ont pas autorité de stockage; ils sont recalculés selon la version des questions. `answeredAt` est une heure déclarée par le navigateur et sert uniquement à situer une réponse dans l’interface; seules les métadonnées Firestore `createdAt`, `updatedAt` et `submittedAt` utilisent l’horloge serveur.
+Les réponses masquées après un changement de branche sont retirées avant sauvegarde ou envoi. Aucune copie de démo ou de reprise locale n’est conservée. `answeredAt` est l’heure déclarée par le navigateur; les métadonnées du document utilisent l’horloge serveur.
 
-Les états de réponse distincts sont : absente (`unanswered`), passée (`skipped` sur une étape facultative), sans objet (`not_applicable`), à discuter (`to_discuss`) et autre (`other` avec une précision de 120 caractères maximum).
+Les états restent distincts : sans réponse, passée, sans objet, à clarifier et autre avec précision courte.
 
 ## Règles
 
-- Répondant authentifié : `get` et écritures sur son propre document uniquement.
-- `list` et lecture d’autres documents : revendication `admin: true` attribuée côté serveur.
-- Aucun rôle n’est lu depuis une donnée éditable par le client. Pas de suppression côté client.
-- Brouillon modifiable; `incomplete` et `submitted` immuables côté répondant.
-- Le mode démo écrit localement dans `localStorage`; il ne prétend pas être une sauvegarde Firebase.
+- Une session anonyme peut lire et modifier uniquement son propre brouillon.
+- Une session anonyme ne peut ni lister les documents ni lire ceux d’autrui.
+- Seuls les comptes porteurs de `admin: true` peuvent lister et consulter toutes les réponses.
+- Les envois `incomplete` et `submitted` sont immuables côté répondante; aucune suppression client n’est autorisée.
 
-Les réponses ne contiennent pas de données réelles de clients finaux. Éviter d’ajouter des données de santé, de digicode ou de géolocalisation au schéma.
+Le questionnaire n’accepte pas de données réelles de clients. Ne pas ajouter de données médicales, codes d’accès ou géolocalisation au schéma.

@@ -3,7 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function isAdmin() { return signedIn() && request.auth.token.admin == true; }
-    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function isRespondent() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+    function owns(uid) { return isRespondent() && request.auth.uid == uid; }
     function validSubmission(uid) {
       return request.resource.data.keys().hasOnly([
           'questionnaireVersion', 'status', 'respondentId', 'answers', 'createdAt', 'updatedAt', 'submittedAt'

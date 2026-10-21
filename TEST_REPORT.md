@@ -1,21 +1,16 @@
 # Rapport de validation
 
-## Résultats
+## Contrôles exécutés
 
 | Contrôle | Résultat |
 |---|---|
-| Lecture du prompt | Intégrale : 614 lignes et 17 sections |
-| `npm test` sous Node.js 22.23.4 | 21 réussis, 0 échec, 1 ignoré (Firestore Emulator) |
-| `npm run build` | Réussi : Tailwind et assemblage de `site/` |
-| Installation npm 10.9.9 | Réussie; audit signale 27 vulnérabilités transitives (17 modérées, 10 élevées) |
-| Push vers `leo50978/qcmm` | Réussi sur `main`; dernier commit `c52374c` |
-| Authentification SSH | Réussie avec la clé enregistrée par la commanditaire |
-| Workflow Pages | Configuré pour tester et déployer sur les push `main`; son statut n'est pas exposé par le connecteur GitHub disponible |
-| Tests des règles Firestore | Non exécutés localement faute de Java/Firebase CLI |
-| Vérification navigateur | Le lancement headless précédent n'a pas produit de DOM fiable |
+| `npm test` avec Firestore Emulator | 23 réussis, aucun échec ni test ignoré |
+| Règles Firestore | Accès anonyme limité à son propre document; liste admin autorisée; soumission terminée immuable |
+| `npm run build` | Réussi : CSS Tailwind et site préparé dans `site/` |
+| Vérification navigateur locale | Parcours rendu dans Chrome avec session Firebase simulée; accueil, étape, progression mobile et passage à l’étape suivante vérifiés |
+| Hauteur mobile 375 × 667 | La page reste à 667 px; aucune extension du document; groupes denses séparés en étapes |
+| Authentification Firebase réelle | Non testée dans le projet de production |
 
-## Configuration restante
+## À activer avant usage réel
 
-Le code contient la configuration Web Firebase fournie. Pour le fonctionnement en production, le projet Firebase doit avoir l'authentification e-mail/mot de passe et Firestore activés, les règles déployées, et le domaine GitHub Pages autorisé. L'activation des Pages par Actions dans les paramètres GitHub doit aussi être confirmée.
-
-Les champs `businessName`, `privacyContact` et `retentionPeriod` restent à renseigner dans `src/config/app-config.js` avant diffusion.
+Dans Firebase `pety-1f7c9`, activer les fournisseurs **Anonyme** et **E-mail/Mot de passe**, publier les règles Firestore et autoriser le domaine GitHub Pages. Compléter le nom de l’entreprise, le contact confidentialité et la durée de conservation dans `src/config/app-config.js`.

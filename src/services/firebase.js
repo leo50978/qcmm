@@ -1,16 +1,23 @@
 import { firebaseConfig, firebaseEnabled } from "../config/app-config.js";
 
-export async function connectFirebase() {
+export async function connectFirebase(name = undefined) {
   if (!firebaseEnabled || !firebaseConfig.apiKey || !firebaseConfig.projectId) return null;
   const [appSdk, authSdk, dbSdk] = await Promise.all([
     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"),
     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"),
     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js")
   ]);
-  const app = appSdk.initializeApp(firebaseConfig);
+  const app = appSdk.initializeApp(firebaseConfig, name);
   const auth = authSdk.getAuth(app);
   const db = dbSdk.getFirestore(app);
   return { app, auth, db, authSdk, dbSdk };
+}
+
+export async function signInRespondent(client) {
+  const existing = client.auth.currentUser;
+  if (existing?.isAnonymous) return existing;
+  const credential = await client.authSdk.signInAnonymously(client.auth);
+  return credential.user;
 }
 
 export async function saveDraft(client, uid, payload) {

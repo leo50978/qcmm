@@ -1,32 +1,29 @@
-# Entretien de préparation — pet-sitting
+# Questionnaire de préparation · pet-sitting
 
-Questionnaire adaptatif en français pour recueillir les décisions de la responsable d’une activité de pet-sitting à Paris. L’application est une base de cadrage ; elle ne constitue pas le logiciel de gestion final.
+Parcours individuel en français pour définir les besoins du futur logiciel de gestion. La répondante ouvre le questionnaire sans compte; une session Firebase anonyme sauvegarde ses réponses dans Firestore et permet de reprendre sur le même navigateur.
 
 ## Démarrer
 
-- Installer Node.js 22 ou ultérieur, puis exécuter `npm install` et `npm run build` pour générer la feuille Tailwind requise par le site.
-- Ouvrir PowerShell dans le dossier du projet et exécuter `powershell -ExecutionPolicy Bypass -File scripts/serve.ps1`.
-- Ouvrir `http://127.0.0.1:4173` dans un navigateur récent.
-- Sans réseau ou sans Firebase, choisir le mode démo. La progression locale de démo est conservée dans ce navigateur; une copie locale des brouillons Firebase expire après sept jours. Ne saisir aucune donnée réelle de client, de santé, de digicode ou de géolocalisation.
-- Pour exécuter les tests automatisés après l’installation : `npm test`.
+- Installer Node.js 22 ou ultérieur, puis lancer `npm install` et `npm run build`.
+- Dans PowerShell, exécuter `powershell -ExecutionPolicy Bypass -File scripts/serve.ps1`, puis ouvrir `http://127.0.0.1:4173`.
+- Les réponses ne sont pas enregistrées si Firebase est indisponible. Aucune démo ou sauvegarde locale de remplacement n’est proposée.
 
-## Ce qui fonctionne
+## Parcours et données
 
-- Une carte par étape, navigation clavier, retour, vérification et modification des réponses.
-- 18 écrans principaux, jusqu’à six approfondissements conditionnels et 24 écrans maximum sur un parcours; seules les précisions qui débloquent une décision métier deviennent obligatoires.
-- Réponses « Autre » courtes, « à discuter », branches conditionnelles, faits dérivés et invalidation des branches devenues cachées.
-- Sauvegarde locale de démo ou sauvegarde Firestore liée au compte Firebase, reprise et envoi complet ou explicitement incomplet.
-- Espace d’analyse accessible seulement avec la revendication Firebase `admin: true`; exports JSON, CSV et Markdown protégés contre les injections CSV usuelles.
-- Mesure locale agrégée de durée et de nombre d’écrans en démo, sans collecte ni transmission des réponses de test.
+- Une étape à la fois, avec retour, vérification et modification des réponses.
+- Les questions suivent les réponses; les points « à discuter » sont conservés comme éléments à clarifier.
+- Les brouillons et envois sont associés à l’identifiant anonyme Firebase du navigateur.
+- L’espace responsable reste protégé par Firebase Authentication et la revendication `admin: true`. Les exports JSON, CSV et Markdown restent disponibles.
+- Firestore ne permet à une session anonyme d’accéder qu’à sa propre réponse. Seuls les administrateurs peuvent consulter la liste.
 
 ## Configuration
 
-La configuration Web Firebase fournie par la commanditaire est dans `src/config/app-config.js`. Ces valeurs identifient le projet Web ; elles ne donnent pas de privilèges administratifs. L’authentification par e-mail/mot de passe, Firestore et les règles doivent être configurés dans Firebase comme décrit dans [DEPLOYMENT.md](DEPLOYMENT.md). `.env.example` est un aide-mémoire de valeurs publiques : le site statique ne lit pas de variables d’environnement.
+La configuration Firebase Web fournie se trouve dans `src/config/app-config.js`. Dans la console Firebase du projet `pety-1f7c9`, activer les fournisseurs **Anonyme** et **E-mail/Mot de passe**, créer Firestore en mode production, déployer les règles et autoriser le domaine GitHub Pages. Les étapes sont décrites dans [DEPLOYMENT.md](DEPLOYMENT.md).
 
-`firebaseEnabled` choisit le mode Firebase ou démo. `businessName`, `privacyContact` et `retentionPeriod` permettent de personnaliser l’accueil et l’information de confidentialité. Compléter le contact et la durée avant tout partage avec la responsable.
+Compléter `businessName`, `privacyContact` et `retentionPeriod` dans `src/config/app-config.js` avant diffusion. Ne jamais ajouter des identifiants administrateur au dépôt.
 
-## Tests et build
+## Vérifications
 
-`npm test` exécute les tests du moteur (branches, réponses, progression et parcours). Pour inclure les tests de règles Firestore, lancer `firebase emulators:exec --only firestore --project demo-pet-questionnaire "npm test"`. `npm run build` produit le site statique dans `site/`, prêt pour GitHub Pages.
-
-Les commandes réellement exécutées et les limites de validation sont consignées dans [TEST_REPORT.md](TEST_REPORT.md). La banque de questions et les décisions métier se trouvent dans [QUESTION_BANK.md](QUESTION_BANK.md), [DECISION_MAPPING.md](DECISION_MAPPING.md), [docs/MATRICE_DECISIONS.md](docs/MATRICE_DECISIONS.md) et [docs/REGLES_ADAPTATIVES.md](docs/REGLES_ADAPTATIVES.md).
+- `npm test` lance les tests du moteur, des sessions anonymes et de l’affichage adaptatif.
+- Pour tester Firestore, exécuter `firebase emulators:exec --only firestore --project demo-pet-questionnaire "npm test"`.
+- `npm run build` produit le site statique dans `site/`, déployé par GitHub Pages.

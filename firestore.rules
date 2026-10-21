@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function validSubmission(uid) {
+      return request.resource.data.keys().hasOnly([
+          'questionnaireVersion', 'status', 'respondentId', 'answers', 'createdAt', 'updatedAt', 'submittedAt'
+        ])
+        && request.resource.data.respondentId == uid
+        && request.resource.data.questionnaireVersion is string
+        && request.resource.data.questionnaireVersion.size() <= 30
+        && request.resource.data.status in ['draft', 'incomplete', 'submitted']
+        && request.resource.data.answers is map
+        && request.resource.data.answers.size() <= 40
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedAt == request.time
+        && ((request.resource.data.status == 'draft' && request.resource.data.submittedAt == null)
+          || (request.resource.data.status in ['incomplete', 'submitted']
+            && request.resource.data.submittedAt is timestamp
+            && request.resource.data.submittedAt == request.time));
+    }
+
+    match /submissions/{uid} {
+      allow get: if owns(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if owns(uid)
+        && validSubmission(uid);
+      allow update: if owns(uid)
+        && resource.data.status == 'draft'
+        && validSubmission(uid)
+        && request.resource.data.respondentId == resource.data.respondentId
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+  }
+}

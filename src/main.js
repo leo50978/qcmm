@@ -48,16 +48,15 @@ function paneHTML(pane,hideLegend=false){
   else control=`<div class="options-grid">${pane.options.map(opt=>radioOption(pane,opt,selected)).join("")}</div>`;
   if((pane.options||[]).some(o=>o.value==="other")&&((Array.isArray(selected)&&selected.includes("other"))||selected==="other"))control+=`<label class="other-field">Votre précision<input data-other-answer="${esc(pane.id)}" maxlength="${pane.otherMax||120}" value="${esc(answer.otherText||"")}" placeholder="En quelques mots"></label>`;
   if(pane.inlineTextWhen&&evaluateInline(pane,answer))control+=`<label class="other-field">${esc(pane.inlineTextLabel||"Précisez") }<input data-inline-answer="${esc(pane.id)}" maxlength="${pane.inlineTextMax||120}" value="${esc(answer.inlineText||"")}" placeholder="En quelques mots"></label>`;
-  const isAnswered=answer.status==="skipped"||(Array.isArray(selected)?selected.length>0:Boolean(selected));
-  return `<fieldset class="question-pane" data-pane="${esc(pane.id)}" ${hideLegend?`aria-label="${esc(pane.title)}"`:""}>${hideLegend?"":`<legend>${esc(pane.title)}</legend>`}${pane.help?`<p class="pane-help">${esc(pane.help)}</p>`:""}${control}<p class="inline-error" data-error-for="${esc(pane.id)}" role="alert"></p>${isAnswered?`<span class="answer-saved"><span aria-hidden="true">✓</span> Choix enregistré</span>`:""}</fieldset>`;
+  return `<fieldset class="question-pane" data-pane="${esc(pane.id)}" ${hideLegend?`aria-label="${esc(pane.title)}"`:""}>${hideLegend?"":`<legend>${esc(pane.title)}</legend>`}${pane.help?`<p class="pane-help">${esc(pane.help)}</p>`:""}${control}<p class="inline-error" data-error-for="${esc(pane.id)}" role="alert"></p></fieldset>`;
 }
 function evaluateInline(pane,answer){return pane.inlineTextWhen?.op==="eq"&&answer.value===pane.inlineTextWhen.value;}
 
-function renderQuestion(){
+function renderQuestion({animate=false}={}){
   const steps=visibleSteps();if(!steps.length){renderHome();return;}startOfCurrent();const view=steps[state.activeScreen];if(!view){renderReview();return;}
   state.page="question";const screen=view.screen;const viewScreen=getViewScreen(view);const compactSplit=view.split;const step=state.activeScreen+1;const progress=Math.round((state.activeScreen/Math.max(1,steps.length))*100);const canSkip=screenCanSkip(viewScreen,state.answers,currentState().facts);const sectionIndex=questions.findIndex(q=>q.id===screen.id)+1;const title=compactSplit?view.panes[0].title:screen.title;
   app.innerHTML=`<section class="question-layout"><div class="quest-heading"><button class="back-link" data-action="home">← Quitter</button><div class="quest-progress"><span class="quest-counter">Étape ${step} <i>/ ${steps.length}</i></span><div class="progress-track" role="progressbar" aria-label="Progression" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div></div><span class="save-chip" data-kind="${state.connection==="online"?"saved":"error"}"><i></i><span data-save-label>${state.connection==="online"?"Sauvegarde active":"À réessayer"}</span></span></div><article class="question-card ${compactSplit?"single-pane":""}" aria-labelledby="question-title"><div class="question-kicker"><span class="section-number">${String(sectionIndex).padStart(2,"0")}</span><span>${esc(screen.section)}</span>${canSkip?`<span class="optional-badge">Facultatif</span>`:""}</div><h1 id="question-title" tabindex="-1">${esc(title)}</h1>${screen.help&&!compactSplit?`<p class="question-help">${esc(screen.help)}</p>`:""}<div class="panes">${view.panes.map(p=>paneHTML(p,compactSplit)).join("")}</div><div class="navigation-row"><button class="button button-secondary" data-action="previous" ${state.activeScreen===0?"disabled":""}>← Retour</button><div class="navigation-right">${canSkip?`<button class="text-button" data-action="skip">Passer</button>`:""}<button class="button button-primary" data-action="next">${state.activeScreen===steps.length-1?"Vérifier":"Continuer"}<span aria-hidden="true">→</span></button></div></div><button class="partial-link" data-action="review-partial">Terminer avec mes réponses</button></article></section>`;
-  requestAnimationFrame(()=>{let target=null;if(state.focusTarget){const f=state.focusTarget;target=document.querySelector(`input[name="${CSS.escape(f.id)}"][value="${CSS.escape(f.value)}"]`);state.focusTarget=null;}if(target)target.focus({preventScroll:true});else document.querySelector("#question-title")?.focus({preventScroll:true});if(window.gsap&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches)window.gsap.from(".question-card",{opacity:0,y:9,duration:.24,ease:"power1.out"});});
+  requestAnimationFrame(()=>{let target=null;if(state.focusTarget){const f=state.focusTarget;target=document.querySelector(`input[name="${CSS.escape(f.id)}"][value="${CSS.escape(f.value)}"]`);state.focusTarget=null;}if(target)target.focus({preventScroll:true});else document.querySelector("#question-title")?.focus({preventScroll:true});if(animate&&window.gsap&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches)window.gsap.from(".question-card",{opacity:0,y:5,duration:.16,ease:"power1.out"});});
 }
 
 function renderReview(){
@@ -86,9 +85,26 @@ function scheduleSave(){
 async function saveNow(){clearTimeout(state.saveTimer);state.saveTimer=null;if(!state.user?.isAnonymous||state.submitted)return;await saveDraft(state.client,state.uid,{questionnaireVersion,answers:activeAnswers(state.answers)});setSaveStatus("Enregistré");}
 function updateAnswer(id,answer,focusTarget=null){
   if(Object.hasOwn(answer,"value")){delete answer.status;answer.answeredAt=new Date().toISOString();}
-  const before=currentState();const fallback=state.activeScreen;state.answers[id]=answer;const after=recalculate(state.answers);
+  const previousAnswer=state.answers[id]||{};const before=currentState();const beforeRoute=JSON.stringify(before.visible.map(s=>[s.id,s.panes.map(p=>p.id)]));const fallback=state.activeScreen;state.answers[id]=answer;const after=recalculate(state.answers);
   for(const oldId of before.activeQuestionIds)if(!after.activeQuestionIds.has(oldId)&&oldId!==id)delete state.answers[oldId];
-  startOfCurrent(fallback);scheduleSave();state.focusTarget=focusTarget;renderQuestion();
+  startOfCurrent(fallback);scheduleSave();
+  const pane=findPane(id);const routeChanged=beforeRoute!==JSON.stringify(after.visible.map(s=>[s.id,s.panes.map(p=>p.id)]));
+  const selected=(value,source)=>Array.isArray(source.value)?source.value.includes(value):source.value===value;
+  const needsConditionalMarkup=(pane?.options?.some(option=>option.value==="other")&&selected("other",previousAnswer)!==selected("other",answer))||Boolean(pane?.inlineTextWhen&&evaluateInline(pane,previousAnswer)!==evaluateInline(pane,answer));
+  if(routeChanged||needsConditionalMarkup){state.focusTarget=focusTarget;renderQuestion();return;}
+  document.querySelectorAll(`input[name="${CSS.escape(id)}"]`).forEach(input=>{
+    const values=Array.isArray(answer.value)?answer.value:[answer.value];const selected=values.includes(input.value);input.checked=selected;
+    const card=input.closest(".option-card");card?.classList.toggle("selected",selected);
+    if(input.type==="checkbox"&&pane?.maxChoices)input.disabled=!selected&&values.filter(Boolean).length>=pane.maxChoices;
+  });
+  document.querySelector(`[data-error-for="${CSS.escape(id)}"]`)?.replaceChildren();
+  syncQuestionProgress();
+}
+function syncQuestionProgress(){
+  if(state.page!=="question")return;const steps=visibleSteps();const progress=Math.round(state.activeScreen/Math.max(1,steps.length)*100);
+  const counter=document.querySelector(".quest-counter");if(counter)counter.innerHTML=`Étape ${state.activeScreen+1} <i>/ ${steps.length}</i>`;
+  const track=document.querySelector(".progress-track");if(track){track.setAttribute("aria-valuenow",String(progress));const fill=track.firstElementChild;if(fill)fill.style.width=`${progress}%`;}
+  const next=document.querySelector('[data-action="next"]');if(next)next.firstChild.textContent=state.activeScreen===steps.length-1?"Vérifier":"Continuer";
 }
 function answerChanged(target){
   const id=target.name||target.dataset.textAnswer||target.dataset.otherAnswer||target.dataset.inlineAnswer;if(!id)return;const pane=findPane(id);if(!pane)return;const prior=state.answers[id]||{};

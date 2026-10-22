@@ -14,11 +14,17 @@ service cloud.firestore {
     }
     function validSubmission(uid) {
       return request.resource.data.keys().hasOnly([
-          'questionnaireVersion', 'status', 'respondentId', 'answers', 'createdAt', 'updatedAt', 'submittedAt'
+          'questionnaireVersion', 'schemaVersion', 'resolvedFacts', 'unresolvedDecisions', 'status', 'respondentId', 'answers', 'createdAt', 'updatedAt', 'submittedAt'
         ])
         && request.resource.data.respondentId == uid
         && request.resource.data.questionnaireVersion is string
         && request.resource.data.questionnaireVersion.size() <= 30
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.schemaVersion == 4
+        && request.resource.data.resolvedFacts is map
+        && request.resource.data.resolvedFacts.size() <= 80
+        && request.resource.data.unresolvedDecisions is list
+        && request.resource.data.unresolvedDecisions.size() <= 40
         && request.resource.data.status in ['draft', 'incomplete', 'submitted']
         && request.resource.data.answers is map
         && request.resource.data.answers.size() <= 40

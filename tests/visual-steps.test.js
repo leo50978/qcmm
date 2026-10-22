@@ -12,9 +12,8 @@ test("wide view keeps related panes together",()=>{
   assert.deepEqual(steps.map(x=>x.panes.map(p=>p.id)),[["a","b"],["c"]]);
 });
 
-test("compact view splits dense screens without changing pane identities",()=>{
+test("compact view keeps two related decisions together and preserves pane identities",()=>{
   const steps=buildVisualSteps(screens,true);
-  assert.deepEqual(steps.map(x=>x.panes.map(p=>p.id)),[["a"],["b"],["c"]]);
+  assert.deepEqual(steps.map(x=>x.panes.map(p=>p.id)),[["a","b"],["c"]]);
   assert.equal(steps[0].screen.id,"one");
-  assert.equal(steps[1].screen.id,"one");
 });

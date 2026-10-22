@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
+    "questionnaire:export": "node scripts/export-question-bank.mjs",
     "build:css": "tailwindcss -c tailwind.config.cjs -i src/tailwind.css -o dist/tailwind.css --minify",
     "build:site": "node scripts/stage-site.mjs",
     "build": "npm run build:css && npm run build:site"

@@ -1,33 +1,42 @@
-# Banque de questions
+# Banque du questionnaire
 
-Version `3.0.0`. Les réponses indiquent les choix de la responsable; elles ne valent pas acceptation d’une fonctionnalité non choisie. Une option « à discuter » est une réponse explicite non résolue. Les six approfondissements maximum sont facultatifs, sauf la précision GPS et la question d’affectation qui deviennent requises si leurs conditions sont remplies.
+Version `4.0.0`. Les modules écrits dans la fiche sont considérés comme des besoins confirmés. Le parcours précise leurs règles de fonctionnement; il ne redemande pas si ces modules sont souhaités.
 
-| Écran / volet | Décision posée | Type | Condition ou obligation |
-|---|---|---|---|
-| 01 A `intake.channels` | Canaux de demande actuels; autre avec précision | Multiple | Obligatoire |
-| 01 B `orders.entry` | Équipe ou clients saisissent les prestations | Unique | Obligatoire; « clients aussi » ouvre un point de cadrage |
-| 02 A `team.users` | Rôles utilisateurs | Multiple | Obligatoire |
-| 02 B `team.visibility` | Missions visibles par les salariés | Unique | Obligatoire |
-| 03 A/B `clients.multiple_pets`, `clients.multiple_addresses` | Animaux et adresses par client | Unique chacun | Obligatoires |
-| 04 A/B `animal.quick_info`, `animal.instructions_edit` | Rubriques terrain et droits de modification | Multiple + unique | Obligatoires |
-| 05 A/B `keys.tracking`, `keys.visibility` | Suivi et visibilité des clés | Multiple + unique | Obligatoires; les codes ne sont jamais saisis |
-| 06 A/B `orders.pricing_unit`, `orders.multiple_pets` | Vente à l’unité/forfait et commandes multi-animaux | Unique | Obligatoires |
-| 07 `orders.recurring_schedule` | Dates d’une commande de 18 promenades | Unique | Obligatoire |
-| 08 A/B `finance.pricing`, `finance.payment_scope` | Tarifs et périmètre des paiements | Unique chacun | Obligatoires; suivi détaillé non présumé |
-| 09 `missions.cancellation` | Annulation, report, quantité à utiliser | Unique | Obligatoire |
-| 10 A/B `assignment.mode`, `assignment.conflicts` | Choix d’un intervenant et conflits d’horaires | Unique chacun | Obligatoires |
-| Adaptatif `assignment.final_decider` | Confirmation de l’affectation si le choix n’est pas manuel | Unique | Obligatoire si visible; résolu sans question si mode manuel |
-| 11 `assignment.replacement` | Remplacement en cas d’absence | Unique | Obligatoire |
-| 12 A/B `staff.horizon`, `staff.mission_actions` | Horizon mobile et actions sur mission | Unique + multiple | Obligatoires |
-| 13 `missions.incident_response` | Contact, signalement et procédure en cas d’incident | Unique | Obligatoire |
-| 14 A/B `geo.enabled`, `geo.metric` | Type de localisation et distance/temps | Unique | Métrique visible avec localisation |
-| 15 `geo.availability` | Affichage d’un intervenant déjà occupé | Unique | Facultatif; adresse de référence et classement par temps |
-| 16 A/B `dashboard.counting`, `dashboard.average_basket` | Règles de compteurs et panier moyen | Unique chacun | Obligatoires |
-| 17 A/B `data.sources`, `staff.notifications` | Sources à importer et moyen de prévenir l’équipe | Multiple | Obligatoires |
-| 18 A/B `priorities.mvp`, `priorities.missing` | Deux priorités et angle mort | Multiple (maximum 2) + unique | Obligatoires; précision texte 120 caractères si demandée |
-| Approfondissement `orders.portal_validation` | Validation d’une commande saisie par un client | Unique | Facultatif si clients saisissent |
-| Approfondissement `animal.care_tracking` | Consulter, confirmer ou indiquer « sans objet » pour le suivi d’un soin | Unique | Facultatif si rubrique santé sélectionnée |
-| Approfondissement `geo.mode_detail` | Moment d’usage GPS | Unique | Requis si GPS pendant le travail |
-| Approfondissement `assignment.replacement_approval` | Validation d’un remplacement | Unique | Facultatif si suggestion/réaffectation automatique |
+Le parcours standard affiche 18 étapes. Les branches ouvertes peuvent aller jusqu’à 22 étapes : saisie client, suivi des forfaits, report/crédit, validation d’un remplacement, précision GPS et gestion des salariés occupés. Les deux décisions liées restent ensemble sur mobile. Le plafond de 24 est vérifié par test. La durée de 5 à 8 minutes n’a pas encore été mesurée auprès d’une répondante.
 
-Le parcours comprend 17 écrans toujours pertinents au niveau de base, l’écran d’affectation conditionnel/résolu, et les approfondissements liés aux choix. Parcours maximal codé : 22 écrans visibles, sous le plafond de 24. La durée cible de 5–8 minutes doit encore être mesurée auprès d’une personne non technique; aucune durée n’est annoncée comme mesurée.
+La liste exacte des libellés et options est générée dans [QUESTIONNAIRE_COMPLET.md](QUESTIONNAIRE_COMPLET.md) par `node scripts/export-question-bank.mjs`. L’ancienne banque est conservée dans `src/data/questions-v3.js` et la liste affichée V3 dans [QUESTIONNAIRE_COMPLET_V3.md](QUESTIONNAIRE_COMPLET_V3.md).
+
+## Parcours et conditions
+
+| Étape | Décisions | Condition |
+|---|---|---|
+| 1 | `intake.channels`, `orders.entry` | Toujours |
+| 2 | `orders.portal_validation` | Saisie des commandes par les clients |
+| 3 | `team.users`, `team.visibility` | Toujours |
+| 4 | `clients.multiple_addresses`, `orders.multiple_pets` | Toujours; ne redemande pas si un client possède plusieurs animaux |
+| 5 | `animal.instructions_edit`, `animal.care_tracking` | Toujours; le suivi des soins est indépendant des blocs santé déjà confirmés |
+| 6 | `keys.tracking`, `keys.visibility` | Toujours; aucun vrai code d’accès demandé |
+| 7 | `orders.pricing_unit`, `orders.package_tracking` | Le détail de décompte apparaît si unité ou mixte |
+| 8 | `orders.recurring_schedule`, `orders.duration_tracking` | Toujours; 18 prestations commandées ne signifient pas 18 réalisées |
+| 9 | `finance.pricing`, `finance.payment_scope` | Toujours; le suivi des paiements reste à décider |
+| 10 | `missions.cancellation`, `missions.cancellation_decider` | Décideur demandé si report ou crédit possible |
+| 11 | `assignment.actor`, `assignment.criteria` | Deux faits distincts : responsable de l’affectation et critères multiples |
+| 12 | `assignment.conflicts`, `assignment.replacement` | Toujours |
+| 13 | `assignment.replacement_approval` | Suggestion ou réaffectation automatique |
+| 14 | `staff.horizon`, `staff.mission_actions` | Toujours; la consultation de mission est acquise |
+| 15 | `missions.incident_response` | Actions d’incident |
+| 16 | `staff.change_info`, `staff.notifications` | Consultation volontaire du planning séparée des alertes proactives |
+| 17 | `geo.enabled`, `geo.metric` | Position des salariés seulement; carte des clients et kilomètres restent confirmés |
+| 18 | `geo.mode_detail` | GPS pendant le travail |
+| 19 | `geo.availability` | Critère de proximité sélectionné |
+| 20 | `dashboard.counting`, `dashboard.average_basket` | Toujours |
+| 21 | `data.sources`, `data.import_scope` | Toujours; « plusieurs supports » supprimé |
+| 22 | `priorities.mvp`, `priorities.missing` | Toujours; seules les deux priorités ont un maximum intentionnel |
+
+Les étapes 2, 7, 13, 18 et 19 sont conditionnelles. Dans le cas normal, ces étapes sont masquées, de même que le second volet de l’étape 7 si la vente à l’unité est choisie : 18 étapes restent visibles. Le chemin le plus complet compte 22 étapes, sous le plafond de 24.
+
+## Faits et obligation
+
+`client-brief.js` contient les besoins confirmés et leurs références internes. Le statut `unknown` indique une modalité non donnée, par exemple la localisation des salariés ou un portail client. Les choix issus d’une réponse sont `questionnaire`; les valeurs explicitement calculées sont `derived`. Les faits « à clarifier » ont un statut distinct et ne deviennent jamais des oui/non.
+
+`shouldShow()` et `isRequired()` sont des fonctions déterministes. `recalculate()` fournit un journal des questions affichées ou masquées, avec raison et obligation; le journal apparaît dans l’export, pas dans l’interface répondante. Les options « à clarifier » et « aucun/sans objet » sont exclusives dans les questions à choix multiple. La précision « Autre » est conservée et vérifiée.

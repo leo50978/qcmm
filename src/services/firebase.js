@@ -32,6 +32,9 @@ export async function saveDraft(client, uid, payload, submissionId = null) {
   const existing = snapshot?.exists() ? snapshot.data() : {};
   await dbSdk.setDoc(ref, {
     questionnaireVersion: payload.questionnaireVersion,
+    schemaVersion: payload.schemaVersion || 4,
+    resolvedFacts: payload.resolvedFacts || {},
+    unresolvedDecisions: payload.unresolvedDecisions || [],
     status: "draft",
     respondentId: uid,
     answers: payload.answers,
@@ -51,6 +54,9 @@ export async function submitDraft(client, uid, payload, submissionId = null) {
     const now = dbSdk.serverTimestamp();
     await dbSdk.setDoc(ref, {
       questionnaireVersion: payload.questionnaireVersion,
+      schemaVersion: payload.schemaVersion || 4,
+      resolvedFacts: payload.resolvedFacts || {},
+      unresolvedDecisions: payload.unresolvedDecisions || [],
       status: payload.status,
       respondentId: uid,
       answers: payload.answers,
@@ -66,6 +72,9 @@ export async function submitDraft(client, uid, payload, submissionId = null) {
     const now = dbSdk.serverTimestamp();
     transaction.set(ref, {
       questionnaireVersion: payload.questionnaireVersion,
+      schemaVersion: payload.schemaVersion || 4,
+      resolvedFacts: payload.resolvedFacts || {},
+      unresolvedDecisions: payload.unresolvedDecisions || [],
       status: payload.status,
       respondentId: uid,
       answers: payload.answers,

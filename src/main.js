@@ -1,13 +1,14 @@
 import { questions } from "./data/questions.js";
-import { activeAnswers, auditQuestionBank, getScreenValidation, paneIsRequired, recalculate, screenCanSkip, validateVisible } from "./engine/questionnaire.js";
+import { activeAnswers, auditQuestionBank, getScreenValidation, paneIsRequired, recalculate, screenCanSkip, validateQuestion, validateVisible } from "./engine/questionnaire.js";
 import { buildVisualSteps } from "./engine/visual-steps.js";
 import { connectFirebase, loadOwnSubmissions, saveDraft, signInRespondent, submitDraft } from "./services/firebase.js";
 import { buildAnalysis, downloadExport } from "./services/analysis.js";
-import { firebaseEnabled, questionnaireVersion, businessName, privacyContact, retentionPeriod } from "./config/app-config.js";
+import { firebaseEnabled, questionnaireVersion, schemaVersion, businessName, privacyContact, retentionPeriod } from "./config/app-config.js";
+import { migrateV3Answers } from "./data/migrations.js";
 
 const app=document.querySelector("#app"),authDialog=document.querySelector("#auth-dialog"),authContent=document.querySelector("#auth-content"),privacyDialog=document.querySelector("#privacy-dialog");
 const saveLabel=document.querySelector("#save-status"),retryButton=document.querySelector("#retry-save"),adminButton=document.querySelector("#admin-open"),toast=document.querySelector("#toast");
-const state={client:null,user:null,uid:null,admin:false,connection:"starting",page:"loading",answers:{},submissions:[],draftId:null,activeScreen:0,screenId:null,viewPaneId:null,consent:false,busy:false,transitioning:false,submitted:false,submission:null,adminSubmissions:null,saveTimer:null,focusTarget:null};
+const state={client:null,user:null,uid:null,admin:false,connection:"starting",page:"loading",answers:{},archivedAnswers:{},submissions:[],draftId:null,activeScreen:0,screenId:null,viewPaneId:null,consent:false,busy:false,transitioning:false,submitted:false,submission:null,adminSubmissions:null,saveTimer:null,focusTarget:null};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const showToast=message=>{toast.textContent=message;toast.classList.add("visible");setTimeout(()=>toast.classList.remove("visible"),3600);};
 const currentState=()=>recalculate(state.answers);
@@ -26,10 +27,12 @@ function startOfCurrent(fallbackIndex=0){const steps=visibleSteps();let index=st
 function currentView(){startOfCurrent(state.activeScreen);return visibleSteps()[state.activeScreen]||null;}
 function getViewScreen(view){return view?{...view.screen,panes:view.panes}:null;}
 function findResumeStep(steps=visibleSteps()){const facts=currentState().facts;for(let i=0;i<steps.length;i++){const screen=getViewScreen(steps[i]);if(screen.panes.some(p=>paneIsRequired(screen,p,state.answers,facts)&&!state.answers[p.id]))return i;}return Math.max(0,steps.length-1);}
+function draftAnswerPayload(){return {...activeAnswers(state.answers),...(Object.keys(state.archivedAnswers).length?{__archived:state.archivedAnswers}:{})};}
+function structuredSnapshot(){const answers=activeAnswers(state.answers);const unresolvedDecisions=Object.entries(answers).filter(([,a])=>{const values=Array.isArray(a?.value)?a.value:[a?.value];return values.includes("to_discuss")||values.includes("meeting");}).map(([id])=>id);return {resolvedFacts:currentState().facts,unresolvedDecisions};}
 
 function renderHome(){
   state.page="home";document.body.dataset.screen="home";const resumed=Object.keys(activeAnswers(state.answers)).length>0;const sentCount=state.submissions.filter(s=>s.status==="submitted"||s.status==="incomplete").length;const title=businessName?`L’aventure de ${esc(businessName)}`:"Les coulisses de votre activité";
-  app.innerHTML=`<section class="welcome-screen"><div class="welcome-copy"><p class="quest-label">Votre mission du jour</p><h1>${title}</h1><p class="hero-copy">Quelques questions pour imaginer un outil qui vous ressemble. Choisissez ce qui décrit le mieux votre quotidien.</p><div class="welcome-art" aria-hidden="true"><svg viewBox="0 0 240 180" role="presentation"><path class="art-sun" d="M172 20a26 26 0 1 0 0 52 26 26 0 0 0 0-52Z"/><path class="art-hill" d="M8 146c34-35 63-41 96-14 38-32 80-33 128-4v52H8Z"/><path class="art-cat" d="M102 82 91 53l28 13c12-5 27-4 38 3l26-16-5 34c7 11 9 25 5 38-7 21-32 34-57 29-26-5-43-26-37-47 2-10 7-19 13-25Z"/><path class="art-face" d="M114 104h1m35 0h1m-24 17c5 4 11 4 16 0"/><path class="art-dog" d="M53 112c-9-7-15-18-14-28 1-7 7-11 12-7l14 12c12-8 29-6 38 4 12 13 7 37-7 47-13 10-35 6-43-7-4-6-4-14 0-21Z"/><path class="art-face" d="M66 119h1m22 1h1m-16 10c3 2 7 2 10 0"/><path class="art-spark" d="m37 44 4 10 10 4-10 4-4 10-4-10-10-4 10-4Zm168 59 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/></svg></div></div><aside class="welcome-start"><div class="welcome-facts"><div><span class="benefit-icon" aria-hidden="true">18</span><span><b>18 thèmes</b><small>Un tour complet de votre activité.</small></span></div><div><span class="benefit-icon" aria-hidden="true">◷</span><span><b>À votre rythme</b><small>Faites une pause quand vous voulez.</small></span></div><div><span class="benefit-icon" aria-hidden="true">✓</span><span><b>Réponses privées</b><small>Enregistrées sur cet appareil.</small></span></div></div>${sentCount?`<p class="submission-history-note">${sentCount} formulaire${sentCount>1?"s":""} déjà envoyé${sentCount>1?"s":""}. Vous pouvez en remplir un autre.</p>`:""}<label class="consent-row"><input id="consent-check" type="checkbox" ${state.consent?"checked":""}><span>J’accepte l’enregistrement de mes réponses pour préparer le logiciel.</span></label><button class="button button-primary button-large" data-action="start" ${state.consent?"":"disabled"}>${resumed?"Reprendre mon parcours":"Commencer un nouveau formulaire"}<span aria-hidden="true">→</span></button><p class="welcome-footnote">Pas de mauvaise réponse. « À discuter » est toujours possible.</p></aside></section>`;
+  app.innerHTML=`<section class="welcome-screen"><div class="welcome-copy"><p class="quest-label">Votre mission du jour</p><h1>${title}</h1><p class="hero-copy">Nous avons étudié votre fiche. Quelques décisions courtes nous permettront de concevoir un outil adapté à votre activité.</p><div class="welcome-art" aria-hidden="true"><svg viewBox="0 0 240 180" role="presentation"><path class="art-sun" d="M172 20a26 26 0 1 0 0 52 26 26 0 0 0 0-52Z"/><path class="art-hill" d="M8 146c34-35 63-41 96-14 38-32 80-33 128-4v52H8Z"/><path class="art-cat" d="M102 82 91 53l28 13c12-5 27-4 38 3l26-16-5 34c7 11 9 25 5 38-7 21-32 34-57 29-26-5-43-26-37-47 2-10 7-19 13-25Z"/><path class="art-face" d="M114 104h1m35 0h1m-24 17c5 4 11 4 16 0"/><path class="art-dog" d="M53 112c-9-7-15-18-14-28 1-7 7-11 12-7l14 12c12-8 29-6 38 4 12 13 7 37-7 47-13 10-35 6-43-7-4-6-4-14 0-21Z"/><path class="art-face" d="M66 119h1m22 1h1m-16 10c3 2 7 2 10 0"/><path class="art-spark" d="m37 44 4 10 10 4-10 4-4 10-4-10-10-4 10-4Zm168 59 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/></svg></div></div><aside class="welcome-start"><div class="welcome-facts"><div><span class="benefit-icon" aria-hidden="true">17</span><span><b>17 étapes</b><small>Un tour complet de votre activité.</small></span></div><div><span class="benefit-icon" aria-hidden="true">◷</span><span><b>À votre rythme</b><small>Faites une pause quand vous voulez.</small></span></div><div><span class="benefit-icon" aria-hidden="true">✓</span><span><b>Réponses privées</b><small>Enregistrées sur cet appareil.</small></span></div></div>${sentCount?`<p class="submission-history-note">${sentCount} formulaire${sentCount>1?"s":""} déjà envoyé${sentCount>1?"s":""}. Vous pouvez en remplir un autre.</p>`:""}<label class="consent-row"><input id="consent-check" type="checkbox" ${state.consent?"checked":""}><span>J’accepte l’enregistrement de mes réponses pour préparer le logiciel.</span></label><button class="button button-primary button-large" data-action="start" ${state.consent?"":"disabled"}>${resumed?"Reprendre mon parcours":"Commencer un nouveau formulaire"}<span aria-hidden="true">→</span></button><p class="welcome-footnote">Pas de mauvaise réponse. « À discuter » est toujours possible.</p></aside></section>`;
   bindConsent();
 }
 
@@ -97,13 +100,16 @@ function renderAdminLogin(){
 
 function scheduleSave(){
   if(!state.user?.isAnonymous||state.admin||state.submitted)return;setSaveStatus("Sauvegarde…");clearTimeout(state.saveTimer);const uid=state.uid;
-  state.saveTimer=setTimeout(async()=>{if(!state.user?.isAnonymous||state.uid!==uid||state.submitted)return;try{state.draftId=await saveDraft(state.client,uid,{questionnaireVersion,answers:activeAnswers(state.answers)},state.draftId);state.connection="online";setSaveStatus("Enregistré");}catch(error){state.connection="error";setSaveStatus("Non enregistré", "error",true);console.error("Firestore save failed",error);}},600);
+  state.saveTimer=setTimeout(async()=>{if(!state.user?.isAnonymous||state.uid!==uid||state.submitted)return;try{state.draftId=await saveDraft(state.client,uid,{questionnaireVersion,schemaVersion,answers:draftAnswerPayload(),...structuredSnapshot()},state.draftId);state.connection="online";setSaveStatus("Enregistré");}catch(error){state.connection="error";setSaveStatus("Non enregistré", "error",true);console.error("Firestore save failed",error);}},600);
 }
-async function saveNow(){clearTimeout(state.saveTimer);state.saveTimer=null;if(!state.user?.isAnonymous||state.submitted)return;state.draftId=await saveDraft(state.client,state.uid,{questionnaireVersion,answers:activeAnswers(state.answers)},state.draftId);setSaveStatus("Enregistré");}
+async function saveNow(){clearTimeout(state.saveTimer);state.saveTimer=null;if(!state.user?.isAnonymous||state.submitted)return;state.draftId=await saveDraft(state.client,state.uid,{questionnaireVersion,schemaVersion,answers:draftAnswerPayload(),...structuredSnapshot()},state.draftId);setSaveStatus("Enregistré");}
 function updateAnswer(id,answer,focusTarget=null){
   if(Object.hasOwn(answer,"value")){delete answer.status;answer.answeredAt=new Date().toISOString();}
-  const previousAnswer=state.answers[id]||{};const before=currentState();const beforeRoute=JSON.stringify(before.visible.map(s=>[s.id,s.panes.map(p=>p.id)]));const fallback=state.activeScreen;state.answers[id]=answer;const after=recalculate(state.answers);
-  for(const oldId of before.activeQuestionIds)if(!after.activeQuestionIds.has(oldId)&&oldId!==id)delete state.answers[oldId];
+  const previousAnswer=state.answers[id]||{};const before=currentState();const beforeRoute=JSON.stringify(before.visible.map(s=>[s.id,s.panes.map(p=>p.id)]));const fallback=state.activeScreen;state.answers[id]=answer;let after=recalculate(state.answers);
+  // Branch answers are archived outside the active map; they are restored only if valid for the newly active question.
+  for(const oldId of before.activeQuestionIds)if(!after.activeQuestionIds.has(oldId)&&oldId!==id&&state.answers[oldId]){state.archivedAnswers[oldId]=state.answers[oldId];delete state.answers[oldId];}
+  for(const newId of after.activeQuestionIds)if(!before.activeQuestionIds.has(newId)&&state.archivedAnswers[newId]){const candidate=state.archivedAnswers[newId];if(!validateQuestion(findPane(newId),candidate)){state.answers[newId]=candidate;delete state.archivedAnswers[newId];}}
+  after=recalculate(state.answers);
   startOfCurrent(fallback);scheduleSave();
   const pane=findPane(id);const routeChanged=beforeRoute!==JSON.stringify(after.visible.map(s=>[s.id,s.panes.map(p=>p.id)]));
   const selected=(value,source)=>Array.isArray(source.value)?source.value.includes(value):source.value===value;
@@ -140,7 +146,12 @@ async function onAuthenticated(user){
   state.admin=false;state.connection="online";authDialog.close();setSaveStatus("Réponses privées");
   state.submissions=await loadOwnSubmissions(state.client,user.uid);
   const draft=state.submissions.find(item=>item.status==="draft");
-  state.draftId=draft?.id||null;state.answers=draft?.answers||{};state.submitted=false;
+  state.draftId=draft?.id||null;state.archivedAnswers={};state.answers={};
+  if(draft){const stored={...(draft.answers||{})};state.archivedAnswers=stored.__archived||{};delete stored.__archived;
+    if(String(draft.questionnaireVersion||"").startsWith("3.")){const migrated=migrateV3Answers(stored);state.answers=migrated.answers;state.archivedAnswers={...state.archivedAnswers,...migrated.archive};}
+    else state.answers=stored;
+  }
+  state.submitted=false;
   state.submission=state.submissions.find(item=>item.status==="submitted"||item.status==="incomplete")||null;
   renderHome();
 }
@@ -176,7 +187,7 @@ async function moveNext(forceSkip=false){
 async function submit(status){
   const validation=validateVisible(state.answers);if(status==="submitted"&&!validation.valid){showToast(validation.error||"Complétez les choix requis ou envoyez en l’état.");const target=validation.questionId&&currentState().visible.find(s=>s.panes.some(p=>p.id===validation.questionId));if(target){state.screenId=target.id;state.viewPaneId=validation.questionId;startOfCurrent();renderQuestion();}return;}
   if(state.busy)return;if(!state.user?.isAnonymous){showToast("La connexion sécurisée est indisponible. Réessayez.");setSaveStatus("Non envoyé","error",true);return;}state.busy=true;
-  try{const payload={questionnaireVersion,answers:activeAnswers(state.answers),status};const id=await submitDraft(state.client,state.uid,payload,state.draftId);state.transitioning=true;try{await animateOut(".review-card");}finally{state.transitioning=false;}const now=new Date();state.submission={...payload,id,createdAt:now,updatedAt:now,submittedAt:now};state.submissions=[state.submission,...state.submissions.filter(item=>item.id!==id)];state.draftId=null;state.submitted=true;setSaveStatus("Réponses envoyées");renderThanks();}
+  try{const payload={questionnaireVersion,schemaVersion,answers:activeAnswers(state.answers),status,...structuredSnapshot()};const id=await submitDraft(state.client,state.uid,payload,state.draftId);state.transitioning=true;try{await animateOut(".review-card");}finally{state.transitioning=false;}const now=new Date();state.submission={...payload,id,createdAt:now,updatedAt:now,submittedAt:now};state.submissions=[state.submission,...state.submissions.filter(item=>item.id!==id)];state.draftId=null;state.submitted=true;setSaveStatus("Réponses envoyées");renderThanks();}
   catch(error){showToast(error.message||"Envoi impossible. Vérifiez la connexion et réessayez.");setSaveStatus("Non envoyé","error",true);}
   finally{state.busy=false;}
 }
@@ -193,14 +204,14 @@ function bindEvents(){
   app.addEventListener("click",async e=>{
     const button=e.target.closest("[data-action]");if(!button)return;const action=button.dataset.action;
     if(action==="start"){if(!state.consent)return;if(Object.keys(activeAnswers(state.answers)).length){setCurrentStep(findResumeStep());renderQuestion();}else{setCurrentStep(0);renderQuestion();}return;}
-    if(action==="new-form"){clearTimeout(state.saveTimer);state.draftId=null;state.submitted=false;state.answers={};state.submission=null;state.activeScreen=0;state.screenId=null;state.viewPaneId=null;state.consent=true;renderHome();return;}
+    if(action==="new-form"){clearTimeout(state.saveTimer);state.draftId=null;state.submitted=false;state.answers={};state.archivedAnswers={};state.submission=null;state.activeScreen=0;state.screenId=null;state.viewPaneId=null;state.consent=true;renderHome();return;}
     if(action==="retry-connection"||action==="retry-save"){await retryConnection();return;}
     if(action==="home"){if(state.admin){await leaveAdmin();return;}if(state.transitioning)return;state.transitioning=true;try{await animateOut(state.page==="review"?".review-card":".question-card");}finally{state.transitioning=false;}renderHome();return;}
     if(action==="previous"){if(state.transitioning)return;state.transitioning=true;try{await animateOut(state.page==="review"?".review-card":".question-card");}finally{state.transitioning=false;}if(state.page==="review"){const steps=visibleSteps();setCurrentStep(Math.max(0,steps.length-1));renderQuestion();return;}if(state.activeScreen===0){renderHome();return;}setCurrentStep(state.activeScreen-1);renderQuestion();return;}
     if(action==="next"){await moveNext();return;}if(action==="skip"){await moveNext(true);return;}
     if(action==="review-partial"){renderReview();return;}
     if(action==="edit"){state.screenId=button.dataset.screen;state.viewPaneId=button.dataset.paneId;startOfCurrent();renderQuestion();return;}
-    if(action==="submit-complete"){await submit("submitted");return;}
+    if(action==="submit-complete"){if(confirm("Confirmer l’envoi définitif de vos réponses ? Elles ne pourront plus être modifiées."))await submit("submitted");return;}
     if(action==="submit-partial"){if(confirm("Envoyer les réponses telles quelles ? Vous ne pourrez plus les modifier."))await submit("incomplete");return;}
     if(action==="admin-signout"){await leaveAdmin();return;}
     if(action==="export"){const item=state.adminSubmissions?.find(x=>x.id===button.dataset.id);if(item)downloadExport(button.dataset.kind,item);return;}

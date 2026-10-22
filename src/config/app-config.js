@@ -11,7 +11,8 @@ export const firebaseConfig = {
 
 // If Firebase is unavailable, the questionnaire stays open but cannot be saved or sent.
 export const firebaseEnabled = true;
-export const questionnaireVersion = "3.0.0";
+export const questionnaireVersion = "4.0.0";
+export const schemaVersion = 4;
 export const businessName = ""; // Empty uses the neutral title above.
 export const privacyContact = "À renseigner par la commanditaire";
 export const retentionPeriod = "À définir avec la commanditaire";

@@ -11,7 +11,10 @@ Parcours individuel en français pour définir les besoins du futur logiciel de 
 ## Parcours et données
 
 - Une étape à la fois, avec retour, vérification et modification des réponses.
-- Les questions suivent les réponses; les points « à discuter » sont conservés comme éléments à clarifier.
+- Questionnaire V4 construit depuis les besoins confirmés de la fiche : 18 étapes standard et 22 au maximum selon les branches. Les points « à clarifier » restent ouverts.
+- Les besoins déjà exprimés (fiches liées, carte clients, distance en kilomètres, planning mobile, modules du tableau de bord) ne sont pas redemandés. Les modalités encore inconnues sont posées séparément.
+- Les faits métier portent une provenance et un statut. Les exports JSON, Markdown et CSV séparent les besoins de départ, les choix, les sujets ouverts et les recommandations non validées.
+- Les brouillons V3 sont migrés avec la table de correspondance `src/data/migrations.js`; les réponses ambiguës sont archivées et les anciennes soumissions restent analysées avec leur banque V3.
 - Chaque envoi crée un formulaire distinct, daté et associé à la session anonyme Firebase du navigateur. Un brouillon peut être repris avant envoi.
 - L’espace responsable demande le code `1199` et affiche l’historique des formulaires enregistrés dans le navigateur courant, du plus récent au plus ancien. Les exports JSON, CSV et Markdown sont disponibles pour chaque formulaire.
 - Le code est une simple barrière d’interface, pas un contrôle de sécurité. Firestore limite chaque session anonyme à ses propres formulaires; les réponses d’un autre navigateur ne sont pas accessibles depuis cet espace.
@@ -24,6 +27,6 @@ Compléter `businessName`, `privacyContact` et `retentionPeriod` dans `src/confi
 
 ## Vérifications
 
-- `npm test` lance les tests du moteur, des sessions anonymes et de l’affichage adaptatif.
+- `npm test` lance les tests du moteur V4, des branches, de migration, des sessions anonymes et de l’affichage adaptatif.
 - Pour tester Firestore, exécuter `firebase emulators:exec --only firestore --project demo-pet-questionnaire "npm test"`.
 - `npm run build` produit le site statique dans `site/`, déployé par GitHub Pages.

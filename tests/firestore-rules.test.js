@@ -18,7 +18,7 @@ test("Firestore protège la propriété, la liste admin et les envois finalisés
     const b=env.authenticatedContext("respondent-b").firestore();
     const anonymous=env.unauthenticatedContext().firestore();
     const admin=env.authenticatedContext("admin-user",{admin:true}).firestore();
-    const payload=uid=>({questionnaireVersion:"3.0.0",status:"draft",respondentId:uid,answers:{"geo.enabled":{value:"to_discuss"}},createdAt:serverTimestamp(),updatedAt:serverTimestamp(),submittedAt:null});
+    const payload=uid=>({questionnaireVersion:"4.0.0",schemaVersion:4,resolvedFacts:{},unresolvedDecisions:[],status:"draft",respondentId:uid,answers:{"geo.enabled":{value:"to_discuss"}},createdAt:serverTimestamp(),updatedAt:serverTimestamp(),submittedAt:null});
     await assertSucceeds(setDoc(doc(a,"submissions/draft-a"),payload("respondent-a")));
     await assertSucceeds(setDoc(doc(a,"submissions/draft-b"),payload("respondent-a")));
     await assertFails(getDoc(doc(a,"submissions/respondent-b")));

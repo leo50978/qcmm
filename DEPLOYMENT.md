@@ -8,7 +8,7 @@
 4. Pour tester les règles localement : `firebase emulators:exec --only firestore --project demo-pet-questionnaire "npm test"`.
 5. Compléter `businessName`, `privacyContact` et `retentionPeriod` dans `src/config/app-config.js` avant de partager le questionnaire.
 
-La répondante ne crée aucun compte. Firebase conserve la session anonyme et limite chaque navigateur à sa propre réponse. L’espace responsable utilise le code `1199` pour afficher cette réponse sur le même navigateur. Le code est visible dans les fichiers du site et ne protège pas l’accès aux données; aucune Cloud Function n’est utilisée. Il n’est donc pas possible de consulter depuis cet espace les réponses enregistrées dans d’autres navigateurs.
+La répondante ne crée aucun compte. Firebase conserve la session anonyme et limite chaque navigateur à ses propres formulaires. Chaque nouvel envoi crée une entrée distincte horodatée; l’espace responsable les classe du plus récent au plus ancien. Le code `1199` est visible dans les fichiers du site et ne protège pas les données; aucune Cloud Function n’est utilisée. L’historique reste donc limité au navigateur ayant rempli les formulaires.
 
 ## GitHub Pages
 

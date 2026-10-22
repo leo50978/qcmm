@@ -6,7 +6,12 @@ service cloud.firestore {
     function isRespondent() {
       return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
-    function owns(uid) { return isRespondent() && request.auth.uid == uid; }
+    function ownsDocument() {
+      return isRespondent() && resource.data.respondentId == request.auth.uid;
+    }
+    function writesOwnDocument() {
+      return isRespondent() && request.resource.data.respondentId == request.auth.uid;
+    }
     function validSubmission(uid) {
       return request.resource.data.keys().hasOnly([
           'questionnaireVersion', 'status', 'respondentId', 'answers', 'createdAt', 'updatedAt', 'submittedAt'
@@ -26,14 +31,15 @@ service cloud.firestore {
             && request.resource.data.submittedAt == request.time));
     }
 
-    match /submissions/{uid} {
-      allow get: if owns(uid) || isAdmin();
-      allow list: if isAdmin();
-      allow create: if owns(uid)
-        && validSubmission(uid);
-      allow update: if owns(uid)
+    match /submissions/{submissionId} {
+      allow get: if ownsDocument() || isAdmin();
+      allow list: if isAdmin() || ownsDocument();
+      allow create: if writesOwnDocument()
+        && validSubmission(request.auth.uid);
+      allow update: if ownsDocument()
+        && writesOwnDocument()
         && resource.data.status == 'draft'
-        && validSubmission(uid)
+        && validSubmission(request.auth.uid)
         && request.resource.data.respondentId == resource.data.respondentId
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;

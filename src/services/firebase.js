@@ -1,21 +1,16 @@
 import { firebaseConfig, firebaseEnabled } from "../config/app-config.js";
 
-export async function connectFirebase(name = undefined) {
+export async function connectFirebase() {
   if (!firebaseEnabled || !firebaseConfig.apiKey || !firebaseConfig.projectId) return null;
   const [appSdk, authSdk, dbSdk] = await Promise.all([
     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js"),
     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"),
     import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js")
   ]);
-  const app = appSdk.initializeApp(firebaseConfig, name);
+  const app = appSdk.initializeApp(firebaseConfig);
   const auth = authSdk.getAuth(app);
   const db = dbSdk.getFirestore(app);
   const client = { app, auth, db, authSdk, dbSdk };
-  if(name==="pet-questionnaire-admin"){
-    const functionsSdk=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js");
-    client.functions=functionsSdk.getFunctions(app,"us-central1");
-    client.functionsSdk=functionsSdk;
-  }
   return client;
 }
 
@@ -66,9 +61,4 @@ export async function submitDraft(client, uid, payload) {
 export async function loadOwnSubmission(client, uid) {
   const snap = await client.dbSdk.getDoc(client.dbSdk.doc(client.db, "submissions", uid));
   return snap.exists() ? snap.data() : null;
-}
-
-export async function listSubmissions(client) {
-  const result = await client.dbSdk.getDocs(client.dbSdk.query(client.dbSdk.collection(client.db, "submissions"), client.dbSdk.orderBy("updatedAt", "desc")));
-  return result.docs.map(d => ({ id: d.id, ...d.data() }));
 }

@@ -7,7 +7,7 @@ import { firebaseEnabled, questionnaireVersion, businessName, privacyContact, re
 
 const app=document.querySelector("#app"),authDialog=document.querySelector("#auth-dialog"),authContent=document.querySelector("#auth-content"),privacyDialog=document.querySelector("#privacy-dialog");
 const saveLabel=document.querySelector("#save-status"),retryButton=document.querySelector("#retry-save"),adminButton=document.querySelector("#admin-open"),toast=document.querySelector("#toast");
-const state={client:null,user:null,uid:null,adminClient:null,admin:false,connection:"starting",page:"loading",answers:{},activeScreen:0,screenId:null,viewPaneId:null,consent:false,busy:false,transitioning:false,submitted:false,submission:null,adminSubmissions:null,saveTimer:null,focusTarget:null};
+const state={client:null,user:null,uid:null,admin:false,connection:"starting",page:"loading",answers:{},activeScreen:0,screenId:null,viewPaneId:null,consent:false,busy:false,transitioning:false,submitted:false,submission:null,adminSubmissions:null,saveTimer:null,focusTarget:null};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const showToast=message=>{toast.textContent=message;toast.classList.add("visible");setTimeout(()=>toast.classList.remove("visible"),3600);};
 const currentState=()=>recalculate(state.answers);
@@ -70,11 +70,11 @@ function renderThanks(){state.page="thanks";const report=buildAnalysis(state.sub
 
 function renderAdmin(submissions){
   state.page="admin";const cards=submissions.map(s=>{const report=buildAnalysis(s);const factRows=Object.entries(report.facts||{}).map(([id,f])=>`<p><strong>${esc(id)}</strong> = ${esc(JSON.stringify(f.value))} <small>(${esc(f.origin)} · source ${esc(f.source)} · ${esc(f.atTrust)})</small></p>`).join("");return `<article class="submission-card"><div class="submission-header"><div><span class="status-pill ${s.status==="submitted"?"status-done":"status-draft"}">${s.status==="submitted"?"Envoyé":s.status==="incomplete"?"Incomplet":"Brouillon"}</span><h2>Réponse ${esc(String(s.id).slice(0,8))}</h2><p>Version ${esc(s.questionnaireVersion||"—")}</p></div><span class="answer-count">${report.answers.length} réponses</span></div><details open><summary>Réponses et synthèse</summary><div class="admin-report"><h3>Décisions confirmées</h3>${report.answers.map(a=>`<p><small>${esc(a.section)}</small><br><strong>${esc(a.question)}</strong><br>${esc(a.value)}</p>`).join("")}<h3>Besoins de départ</h3>${report.brief.map(b=>`<p><strong>${esc(b.theme)} :</strong> ${esc(b.status)}</p>`).join("")}<h3>À clarifier</h3>${report.unresolved.length?report.unresolved.map(x=>`<p>${esc(x.question)} — ${esc(x.reason)}</p>`).join(""):`<p>Aucun point à clarifier.</p>`}<h3>Recommandations à valider</h3>${report.recommendations.length?report.recommendations.map(x=>`<p>${esc(x)}</p>`).join(""):`<p>Aucune recommandation déduite.</p>`}<h3>Risques</h3>${report.risks.length?report.risks.map(x=>`<p>${esc(x)}</p>`).join(""):`<p>Aucun risque détecté.</p>`}</div></details><details><summary>Autres détails</summary><div class="admin-report"><h3>Dépendances</h3>${report.dependencies.map(x=>`<p>${esc(x)}</p>`).join("")||"<p>Aucune dépendance.</p>"}<h3>Questions non posées</h3>${report.notAsked.map(x=>`<p><small>${esc(x.status)}</small> ${esc(x.question)} — ${esc(x.reason)}</p>`).join("")}<h3>Origine des faits</h3>${factRows||"<p>Aucun fait calculé.</p>"}<h3>Hors périmètre</h3>${report.outOfScope.map(x=>`<p>${esc(x.question)} — ${esc(x.reason)}</p>`).join("")}<h3>Priorités</h3><p>${report.priorities.map(esc).join(", ")||"Aucune priorité choisie."}</p></div></details><div class="export-row"><button class="button button-small button-secondary" data-action="export" data-kind="json" data-id="${esc(s.id)}">JSON</button><button class="button button-small button-secondary" data-action="export" data-kind="csv" data-id="${esc(s.id)}">CSV</button><button class="button button-small button-secondary" data-action="export" data-kind="markdown" data-id="${esc(s.id)}">Markdown</button></div></article>`;}).join("");
-  app.innerHTML=`<section class="admin-layout"><div class="quest-heading"><span class="quest-counter">Espace responsable</span><button class="text-button" data-action="admin-signout">Déconnexion</button></div><div class="admin-title"><span class="eyebrow">Données protégées</span><h1>Réponses du client</h1><p>Consultez les réponses et les points à clarifier.</p></div><div class="admin-list">${cards||`<p class="empty-state">Aucune réponse pour le moment.</p>`}</div></section>`;
+  app.innerHTML=`<section class="admin-layout"><div class="quest-heading"><span class="quest-counter">Espace responsable</span><button class="text-button" data-action="admin-signout">Déconnexion</button></div><div class="admin-title"><span class="eyebrow">Réponse de cet appareil</span><h1>Réponse du client</h1><p>Consultez les réponses et les points à clarifier.</p></div><div class="admin-list">${cards||`<p class="empty-state">Aucune réponse enregistrée dans ce navigateur.</p>`}</div></section>`;
 }
 
 function renderAdminLogin(){
-  authContent.innerHTML=`<span class="eyebrow">Espace responsable</span><h2 id="auth-title">Entrer le code d’accès</h2><p>Accès réservé à la responsable.</p><form id="admin-auth-form" class="auth-form"><label>Code d’accès<input name="code" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" aria-label="Code d’accès à quatre chiffres" required autofocus></label><button class="button button-primary button-full" type="submit">Voir les réponses</button><p class="inline-error" id="auth-error" role="alert"></p></form>`;
+  authContent.innerHTML=`<span class="eyebrow">Espace responsable</span><h2 id="auth-title">Entrer le code d’accès</h2><p>Accès à la réponse sauvegardée sur cet appareil.</p><form id="admin-auth-form" class="auth-form"><label>Code d’accès<input name="code" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" aria-label="Code d’accès à quatre chiffres" required autofocus></label><button class="button button-primary button-full" type="submit">Voir les réponses</button><p class="inline-error" id="auth-error" role="alert"></p></form>`;
   if(!authDialog.open)authDialog.showModal();
   authContent.querySelector('input[name="code"]')?.focus();
 }
@@ -146,8 +146,6 @@ async function retryConnection(){
 
 async function openAdminLogin(){
   if(state.admin){await showAdmin();return;}
-  try{if(!firebaseEnabled)throw new Error("Firebase est désactivé.");if(!state.adminClient)state.adminClient=await connectFirebase("pet-questionnaire-admin");}
-  catch(error){showToast("Connexion administrateur indisponible.");console.error("Admin Firebase unavailable",error);}
   renderAdminLogin();
 }
 async function moveNext(forceSkip=false){
@@ -192,8 +190,10 @@ function bindEvents(){
 
 authDialog.addEventListener("submit",async e=>{
   if(e.target.id!=="admin-auth-form")return;e.preventDefault();const form=new FormData(e.target);const code=String(form.get("code")||"").trim();const error=document.querySelector("#auth-error");const submit=e.target.querySelector('button[type="submit"]');
-  try{if(!state.adminClient)state.adminClient=await connectFirebase("pet-questionnaire-admin");if(!state.adminClient)throw new Error("Firebase indisponible.");submit.disabled=true;if(error)error.textContent="Vérification…";const unlock=state.adminClient.functionsSdk.httpsCallable(state.adminClient.functions,"unlockAdmin");const result=await unlock({code});state.adminSubmissions=result.data.submissions||[];state.admin=true;authDialog.close();renderAdmin(state.adminSubmissions);}
-  catch(err){if(error)error.textContent=err.code?.includes("resource-exhausted")?"Trop d’essais. Réessayez dans 15 minutes.":err.code?.includes("permission-denied")?"Code incorrect.":"Connexion indisponible. Réessayez plus tard.";const input=e.target.querySelector('input[name="code"]');if(input){input.value="";input.focus();}if(submit)submit.disabled=false;}
+  submit.disabled=true;
+  if(code!=="1199"){if(error)error.textContent="Code incorrect.";const input=e.target.querySelector('input[name="code"]');if(input){input.value="";input.focus();}submit.disabled=false;return;}
+  state.adminSubmissions=state.submission?[{...state.submission,id:state.uid}]:[];
+  state.admin=true;authDialog.close();renderAdmin(state.adminSubmissions);
 });
 
 bindEvents();

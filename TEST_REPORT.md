@@ -4,7 +4,7 @@
 
 | Contrôle | Résultat |
 |---|---|
-| `npm test` | 22 réussis, 1 ignoré; tests de parcours, branches, faits, migration V3, exports et route mobile |
+| `npm test` | 22 réussis, 1 ignoré; tests de parcours, branches, faits, migration V3, exports et route mobile. Le test des règles Firestore est ignoré sans émulateur |
 | Banque de questions | 18 étapes au parcours standard; 22 sur le parcours branché testé; audit sans erreur |
 | Émulateur Firestore | Non exécuté localement : aucun émulateur disponible dans cet environnement |
 | `npm run build` | Réussi; CSS Tailwind et site GitHub Pages préparés dans `site/` |
@@ -16,7 +16,7 @@ Le workflow GitHub du dépôt démarre l’émulateur Firestore avant le build. 
 
 ## Limites fonctionnelles connues
 
-- Le code d’interface `1199` n’est pas une autorisation Firestore. Les règles protègent les réponses et interdisent la lecture anonyme des formulaires d’autres navigateurs; l’espace responsable actuel ne peut consulter que ceux de la session locale. Un accès responsable multi-appareils demande une véritable authentification Firebase portant la custom claim `admin: true`.
+- La lecture globale Firestore est maintenant ouverte aux sessions anonymes pour permettre à l’espace responsable de consulter les formulaires de tous les appareils après saisie du code `1199`. Le code reste une simple barrière visuelle : un visiteur techniquement averti peut lire la collection. Les règles limitent toujours les créations et modifications de documents au répondant propriétaire.
 - Le fournisseur anonyme doit être activé dans Firebase. Les nouvelles règles V4 doivent être publiées pour accepter `schemaVersion`, `resolvedFacts` et `unresolvedDecisions`.
 - Le contact confidentialité et la durée de conservation restent à confirmer avant diffusion.
 - Le temps de remplissage de 5 à 8 minutes n’a pas été mesuré auprès d’une répondante.

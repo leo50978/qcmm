@@ -39,7 +39,9 @@ service cloud.firestore {
 
     match /submissions/{submissionId} {
       allow get: if ownsDocument() || isAdmin();
-      allow list: if isAdmin() || ownsDocument();
+      // The respondent UI uses a client-side PIN gate only. Any signed-in
+      // anonymous visitor can technically list submissions; see DEPLOYMENT.md.
+      allow list: if isRespondent() || isAdmin();
       allow create: if writesOwnDocument()
         && validSubmission(request.auth.uid);
       allow update: if ownsDocument()

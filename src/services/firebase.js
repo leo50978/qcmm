@@ -97,6 +97,14 @@ export async function loadOwnSubmissions(client, uid) {
     .sort((a, b) => submissionDate(b) - submissionDate(a));
 }
 
+export async function loadAllSubmissions(client) {
+  const { db, dbSdk } = client;
+  const result = await dbSdk.getDocs(dbSdk.collection(db, "submissions"));
+  return result.docs
+    .map(document => ({ id: document.id, ...document.data() }))
+    .sort((a, b) => submissionDate(b) - submissionDate(a));
+}
+
 function submissionDate(submission) {
   const value = submission.submittedAt || submission.updatedAt || submission.createdAt;
   return value?.toDate ? value.toDate().getTime() : new Date(value || 0).getTime();

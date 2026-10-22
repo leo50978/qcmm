@@ -17,7 +17,7 @@ Parcours individuel en français pour définir les besoins du futur logiciel de 
 - Les brouillons V3 sont migrés avec la table de correspondance `src/data/migrations.js`; les réponses ambiguës sont archivées et les anciennes soumissions restent analysées avec leur banque V3.
 - Chaque envoi crée un formulaire distinct, daté et associé à la session anonyme Firebase du navigateur. Un brouillon peut être repris avant envoi.
 - L’espace responsable demande le code `1199` et affiche l’historique des formulaires enregistrés dans le navigateur courant, du plus récent au plus ancien. Les exports JSON, CSV et Markdown sont disponibles pour chaque formulaire.
-- Le code est une simple barrière d’interface, pas un contrôle de sécurité. Firestore limite chaque session anonyme à ses propres formulaires; les réponses d’un autre navigateur ne sont pas accessibles depuis cet espace.
+- Le code est une simple barrière d’interface, pas un contrôle de sécurité. Toute session anonyme peut lister les réponses dans Firestore; cette configuration expose les réponses à un visiteur techniquement averti. Voir [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Configuration
 

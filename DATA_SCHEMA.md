@@ -23,7 +23,7 @@ Chaque fait comporte `value`, `source` (`client_brief`, `questionnaire` ou `deri
 
 - Une session anonyme ne peut lire, modifier ou lister que ses propres brouillons avec une requête filtrée par `respondentId`.
 - Une session anonyme ne peut pas lire les réponses d’autrui ni modifier une réponse envoyée.
-- La règle Firestore permet une liste complète aux comptes ayant la custom claim `admin: true`. Le code `1199` dans l’interface n’est pas cette autorisation; l’interface actuelle ne récupère que les formulaires de la session anonyme courante.
+- La règle Firestore autorise actuellement toute session anonyme à lister la collection afin que le responsable puisse voir les réponses de tous les appareils avec le code d’interface `1199`. Ce code n’est pas une autorisation Firestore; les données peuvent être lues par un visiteur techniquement averti.
 - La suppression client est interdite.
 
 Les réponses de cadrage ne doivent contenir aucun vrai digicode, adresse privée, donnée médicale identifiable ou position GPS réelle. L’entreprise doit encore confirmer le contact de confidentialité et la durée de conservation avant la diffusion.

@@ -104,3 +104,9 @@ body{background:#faf9f6;color:#1e2b24}
 .export-row .button{min-height:38px;font-size:11px}
 .submission-history-note{margin:0;padding:9px 11px;border-radius:10px;background:#eef3e7;color:#526951;font-size:11px;font-weight:700}
 @media(max-width:640px){.admin-answer-list{grid-template-columns:1fr}.submission-date{font-size:11px}.submission-header h2{font-size:19px}.admin-insight{padding:12px}.admin-title p{font-size:12px}}
+
+/* Keep question headings in view when a short screen forces the answers to scroll. */
+@media(max-height:720px){
+  .question-card{justify-content:flex-start}
+  .question-card .panes{align-content:start;flex:1 1 auto}
+}

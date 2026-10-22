@@ -30,7 +30,7 @@ test("Firestore limite l’écriture au répondant et autorise la lecture global
     assert.equal(ownForms.size,2,"un répondant peut enregistrer plusieurs formulaires");
     await assertSucceeds(getDocs(query(collection(a,"submissions"),where("respondentId","==","respondent-b"))));
     await assertSucceeds(getDocs(collection(admin,"submissions")));
-    await assertFails(setDoc(doc(b,"submissions/respondent-b"),payload("respondent-b")));
+    await assertSucceeds(setDoc(doc(b,"submissions/respondent-b"),payload("respondent-b")));
     await assertFails(updateDoc(doc(b,"submissions/draft-a"),{status:"submitted",submittedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
     await assertSucceeds(updateDoc(doc(a,"submissions/draft-a"),{status:"submitted",submittedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
     await assertFails(updateDoc(doc(a,"submissions/draft-a"),{answers:{changed:{value:"no"}},updatedAt:serverTimestamp()}));

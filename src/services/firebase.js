@@ -10,7 +10,13 @@ export async function connectFirebase(name = undefined) {
   const app = appSdk.initializeApp(firebaseConfig, name);
   const auth = authSdk.getAuth(app);
   const db = dbSdk.getFirestore(app);
-  return { app, auth, db, authSdk, dbSdk };
+  const client = { app, auth, db, authSdk, dbSdk };
+  if(name==="pet-questionnaire-admin"){
+    const functionsSdk=await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js");
+    client.functions=functionsSdk.getFunctions(app,"us-central1");
+    client.functionsSdk=functionsSdk;
+  }
+  return client;
 }
 
 export async function signInRespondent(client) {

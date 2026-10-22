@@ -26,10 +26,10 @@ export async function saveDraft(client, uid, payload, submissionId = null) {
   const ref = submissionId
     ? dbSdk.doc(db, "submissions", submissionId)
     : dbSdk.doc(dbSdk.collection(db, "submissions"));
-  const snapshot = await dbSdk.getDoc(ref);
-  if (snapshot.exists() && snapshot.data().status !== "draft") throw new Error("Ce questionnaire a déjà été envoyé. Contactez la responsable pour demander une correction.");
+  const snapshot = submissionId ? await dbSdk.getDoc(ref) : null;
+  if (snapshot?.exists() && snapshot.data().status !== "draft") throw new Error("Ce questionnaire a déjà été envoyé. Contactez la responsable pour demander une correction.");
   const now = dbSdk.serverTimestamp();
-  const existing = snapshot.exists() ? snapshot.data() : {};
+  const existing = snapshot?.exists() ? snapshot.data() : {};
   await dbSdk.setDoc(ref, {
     questionnaireVersion: payload.questionnaireVersion,
     status: "draft",
@@ -47,6 +47,19 @@ export async function submitDraft(client, uid, payload, submissionId = null) {
   const ref = submissionId
     ? dbSdk.doc(db, "submissions", submissionId)
     : dbSdk.doc(dbSdk.collection(db, "submissions"));
+  if (!submissionId) {
+    const now = dbSdk.serverTimestamp();
+    await dbSdk.setDoc(ref, {
+      questionnaireVersion: payload.questionnaireVersion,
+      status: payload.status,
+      respondentId: uid,
+      answers: payload.answers,
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: now
+    });
+    return ref.id;
+  }
   await dbSdk.runTransaction(db, async transaction => {
     const snapshot = await transaction.get(ref);
     if (snapshot.exists() && snapshot.data().status !== "draft") throw new Error("Ce questionnaire a déjà été envoyé.");
